@@ -3,6 +3,7 @@ require('../Content/bootstrap-theme.min.css');
 require('../Content/bootstrap.js');
 
 let m = require('mithril'),
+    p = require('./common/path.js'),
     pre = obj => m('pre', JSON.stringify(obj, null, 2)),
     globstate = {
         name: 'Pau',
@@ -11,7 +12,7 @@ let m = require('mithril'),
 
 
 console.log('importing redux');
-import { createStore } from "redux";
+import { createStore, combineReducers } from "redux";
 
 console.log('defining reducer');
 function counter(state = 0, action) {
@@ -24,10 +25,19 @@ function counter(state = 0, action) {
         return state;
     }
 }
+function name(state = 'pau', action) {
+    console.log('non reducing reducer: '  + JSON.stringify(state, null, 2));
+    return state;
+}
 
 console.log('creating store app');
 // api: { subscribe, dispatch, getState }
-let store = createStore(counter);
+let reducer = combineReducers({
+    counter: counter,
+    name: name
+}),
+    store = createStore(reducer);
+
 store.subscribe(() => console.log(store.getState()));
 
 store.dispatch({ type: 'INCREMENT' });
@@ -38,18 +48,24 @@ store.dispatch({ type: 'INCREMENT' });
 let increment = function() { store.dispatch({ type: 'INCREMENT' }); },
     decrement = function() { store.dispatch({ type: 'DECREMENT' }); };
 
+function pathState(path) {
+    return function() {
+        return p.path(path)(store.getState());
+    };
+}
 
 let component = {
     controller: function() {
         return {
-            counter: function() { return store.getState(); }
+            name: pathState('name'),
+            counter: pathState('counter')
         };
     },
     view: function(ctrl) {
         console.log('component rendered');
         //let state = store.getState();
         return [
-            m('h3', 'Hello world!'),
+            m('h3', `Hello world ${ctrl.name()}!`),
             pre(ctrl.counter()),
             m('button.btn.btn-default', { onclick: increment }, '+1'),
             m('button.btn.btn-default', { onclick: decrement }, '-1')
