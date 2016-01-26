@@ -2,41 +2,49 @@
 
 import { createStore, combineReducers } from "redux";
 
-console.log('defining reducer');
-function counter(state = 0, action) {
-    switch(action.type) {
-    case 'INCREMENT':
-        return state + 1;
-    case 'DECREMENT':
-        return state - 1;
-    default:
-        return state;
-    }
-}
-
-let increment = function() { store.dispatch({ type: 'INCREMENT' }); },
-    decrement = function() { store.dispatch({ type: 'DECREMENT' }); };
-
-function pathState(path) {
-    return function() {
-        return p.path(path)(store.getState());
-    };
-}
-
 let n = 100,
     N = n * n,
-    u = 5;
+    u = 5,
+    state = [];
+
+let value = () => Math.random() > 0.5 ? '#fff' : '#000';
+
+for (let i = 0; i < n; i++) {
+    let rs = [];
+    for (let j = 0; j < n; j++) {
+        rs.push(value());
+    }
+    state.push(rs);
+}
+
+// function createReducer(i,j) {
+//     return function reducer(state = [], action) {
+//         if (action.i === i && action.j === j) {
+//             let newState = Object.assign({}, state, )
+//             return ();
+//         }
+//         return state;
+//     };
+// }
+
+// for(let i = 0; i < n; i++) {
+//     for (let j = 0; j < n; j++) {
+        
+//     }
+// }
 
 let cell = {
     controller: function(indexes) {
-        let color = Math.random() > 0.5 ? '#fff' : '#000';
         let { i, j } = indexes;
         let top = i * u,
             left = j * u;
+            //color = state[i][j];
+        function style() {
+            let color = value();
+            return `display: inline-block; background-color: ${color}; width: ${u}px; height: ${u}px; top:${top}px; left:${left}px; position: absolute`;
+        }
         return {
-            i: i,
-            j: j,
-            style: () => `display: inline-block; background-color: ${color}; width: ${u}px; height: ${u}px; top:${top}px; left:${left}px; position: absolute`
+            style: style
         };
     },
     view: function(ctrl) {
@@ -52,7 +60,6 @@ for (let i = 0; i < n; i++) {
     for (let j = 0; j < n; j++) {
         r.push(m.component(cell, { i: i, j: j }));
     }
-    //matrix.push(m('div.row', r));
     matrix.push(r);
 }
 
@@ -73,3 +80,8 @@ let matrix_component = {
 };
 
 m.mount(document.getElementById('theBody'), matrix_component);
+function loop() {
+    m.redraw();
+    setTimeout(loop, 1000);
+}
+//loop();
