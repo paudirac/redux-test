@@ -1,17 +1,5 @@
-﻿require('../Content/bootstrap.min.css');
-require('../Content/bootstrap-theme.min.css');
-require('../Content/bootstrap.js');
+﻿import m from 'mithril';
 
-let m = require('mithril'),
-    p = require('./common/path.js'),
-    pre = obj => m('pre', JSON.stringify(obj, null, 2)),
-    globstate = {
-        name: 'Pau',
-        counter: 0
-    };
-
-
-console.log('importing redux');
 import { createStore, combineReducers } from "redux";
 
 console.log('defining reducer');
@@ -25,25 +13,6 @@ function counter(state = 0, action) {
         return state;
     }
 }
-function name(state = 'pau', action) {
-    console.log('non reducing reducer: '  + JSON.stringify(state, null, 2));
-    return state;
-}
-
-console.log('creating store app');
-// api: { subscribe, dispatch, getState }
-let reducer = combineReducers({
-    counter: counter,
-    name: name
-}),
-    store = createStore(reducer);
-
-store.subscribe(() => console.log(store.getState()));
-
-store.dispatch({ type: 'INCREMENT' });
-store.dispatch({ type: 'INCREMENT' });
-store.dispatch({ type: 'DECREMENT' });
-store.dispatch({ type: 'INCREMENT' });
 
 let increment = function() { store.dispatch({ type: 'INCREMENT' }); },
     decrement = function() { store.dispatch({ type: 'DECREMENT' }); };
@@ -54,22 +23,53 @@ function pathState(path) {
     };
 }
 
-let component = {
-    controller: function() {
+let n = 100,
+    N = n * n,
+    u = 5;
+
+let cell = {
+    controller: function(indexes) {
+        let color = Math.random() > 0.5 ? '#fff' : '#000';
+        let { i, j } = indexes;
+        let top = i * u,
+            left = j * u;
         return {
-            name: pathState('name'),
-            counter: pathState('counter')
+            i: i,
+            j: j,
+            style: () => `display: inline-block; background-color: ${color}; width: ${u}px; height: ${u}px; top:${top}px; left:${left}px; position: absolute`
         };
     },
     view: function(ctrl) {
-        console.log('component rendered');
-        //let state = store.getState();
-        return [
-            m('h3', `Hello world ${ctrl.name()}!`),
-            pre(ctrl.counter()),
-            m('button.btn.btn-default', { onclick: increment }, '+1'),
-            m('button.btn.btn-default', { onclick: decrement }, '-1')
-        ];
+        return m('div', {
+            style: ctrl.style()
+        });
     }
 };
-m.mount(document.getElementById('theBody'), component);
+
+let matrix = [];
+for (let i = 0; i < n; i++) {
+    let r = [];
+    for (let j = 0; j < n; j++) {
+        r.push(m.component(cell, { i: i, j: j }));
+    }
+    //matrix.push(m('div.row', r));
+    matrix.push(r);
+}
+
+let matrix_component = {
+    controller: function() {
+        let width = n * u,
+            height = n * u;
+        return {
+            style: () => `background-color: #cdcdcd; width: ${width}px; height: ${height}px; border-width: 1px; border-style: solid; position: absolute`
+        };
+    },
+    view: function(ctrl) {
+        let row = matrix[0], row2 = matrix[1];
+        return m('div', {
+            style: ctrl.style()
+        }, matrix); //[row, row2]);
+    }
+};
+
+m.mount(document.getElementById('theBody'), matrix_component);
