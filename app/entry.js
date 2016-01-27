@@ -7,15 +7,36 @@ let n = 100,
     N = n * n,
     u = 5;
 
-let rndColor = () => Math.random() > 0.5 ? '#fff' : '#000';
+let rndColor = () => Math.random() > 0.5 ? '#fff' : '#000',
+    maxBound = i => i == n - 1 ? 0 : i,
+    minBound = i => i == -1 ? n - 1 : i,
+    next = i => i + 1,
+    prev = i => i - 1,
+    isBlack = color === '#000';
+
+function neighboursCount(i, j) {
+    let im = minBound(prev(i)),
+        iM = maxBound(next(i)), 
+        jm = minBound(prev(j)),
+        jM = maxBound(next(j));
+
+    let count = 0;
+    for(let ii = im; ii <= iM; ii++) {
+        for(let jj = jm; jj <= jM; jj++) {
+            if (ii !== i && jj !== jj) {
+                count = count + isBlack(store.getState()[ii * n + j]);
+            }
+        }
+    }
+}
 
 function createReducer(i,j) {
     let index = i * n + j,
         initialState = rndColor();
     return function reducer(state = initialState, action) {
+        let aindex = action.i * n + action.j;
         switch(action.type) {
         case ACTION_MUTATE:
-            let aindex = action.i * n + action.j;
             if (index === aindex) {
                 return action.color;
             } else {
