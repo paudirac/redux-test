@@ -31,6 +31,7 @@ module.exports = {
     resolveLoader: {
         root: nodeModulesDir
     },
+    devtoool: 'inline-source-map',
     module: {
         loaders: [
             // ref: https://github.com/gowravshekar/bootstrap-webpack
@@ -50,15 +51,5 @@ module.exports = {
                 exclude: /node_modules|bower_components|jquery\.signalR.*|.*bootstrap.js/
             }
         ]
-    },
-    plugins: [
-        new webpack.ProvidePlugin({
-            $: "jquery",
-            jQuery: "jquery"
-        }),
-        new webpack.ProvidePlugin({
-            _: "underscore"
-        }),
-        new webpack.OldWatchingPlugin() // the new one seems not to be working on new node
-    ]
+    }
 }

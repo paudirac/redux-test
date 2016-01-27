@@ -8,26 +8,52 @@ let n = 100,
     u = 5;
 
 let rndColor = () => Math.random() > 0.5 ? '#fff' : '#000',
-    maxBound = i => i == n - 1 ? 0 : i,
-    minBound = i => i == -1 ? n - 1 : i,
-    next = i => i + 1,
-    prev = i => i - 1,
-    isBlack = color === '#000';
+    periodic = i => {
+        switch(i) {
+        case -1: return (n - 1);
+        case (n - 1): return 0;
+        default: return i;
+        }
+    },
+    isBlack = (color) => color === '#000';
 
-function neighboursCount(i, j) {
-    let im = minBound(prev(i)),
-        iM = maxBound(next(i)), 
-        jm = minBound(prev(j)),
-        jM = maxBound(next(j));
+function logfn(fn) {
+    return function(i) {
+        let r = fn(i);
+        //console.log(`${i} -> ${r}`);
+        return r;
+    };
+}
 
-    let count = 0;
-    for(let ii = im; ii <= iM; ii++) {
-        for(let jj = jm; jj <= jM; jj++) {
-            if (ii !== i && jj !== jj) {
-                count = count + isBlack(store.getState()[ii * n + j]);
+periodic = logfn(periodic);
+
+function neighboursOf(i, j) {
+    let neig = [];
+    for(let ii = -1; ii < 2; ii++) {
+        for(let jj = -1; jj < 2; jj++) {
+            if (!((ii === 0) && (jj === 0))) {
+                let ni = periodic(i + ii),
+                    nj = periodic(j + jj);
+                neig.push(ni * n + nj);
             }
         }
     }
+    return neig;
+}
+
+let neighbours = [];
+for(let i = 0; i < n; i++) {
+    for(let j = 0; j < n; j++) {
+        neighbours.push(neighboursOf(i,j)); 
+    }
+}
+
+function neighbourCount(i,j, state) {
+    let count = 0;
+    for(let k = 0; k < n; k++) {
+        count = count + (isBlack(state[neighbours[i * n + j][k]]) ? 1 : 0);
+    }
+    return count;
 }
 
 function createReducer(i,j) {
@@ -37,11 +63,11 @@ function createReducer(i,j) {
         let aindex = action.i * n + action.j;
         switch(action.type) {
         case ACTION_MUTATE:
-            if (index === aindex) {
-                return action.color;
-            } else {
-                return state;
-            }
+            let c = neighbourCount(i, j, store.getState());
+            if (c > 4) { return '#fff'; }
+            else if (c === 2 || c === 3) { return '#000'; }
+            else { return state; }
+            break;
         default:
             return state;
         }
@@ -94,7 +120,8 @@ function loop(i, j, color) {
             loop(rnd(), rnd(), color);
         }, 0);
     }
-};
+}
+
 window.api.loop = function() {
     window.api.started = true;
     loop(rnd(), rnd(), '#f00');
