@@ -7,25 +7,23 @@ let n = 100,
     N = n * n,
     u = 5;
 
-let rndColor = () => Math.random() > 0.5 ? '#fff' : '#000',
+let rndColor = () => Math.random() > 0.9 ? 1 : 0,
     periodic = i => {
         switch(i) {
         case -1: return (n - 1);
-        case (n - 1): return 0;
+        //case (n - 1): return 0;
+        case n: return 0;
         default: return i;
         }
-    },
-    isBlack = (color) => color === '#000';
-
-function logfn(fn) {
-    return function(i) {
-        let r = fn(i);
-        //console.log(`${i} -> ${r}`);
-        return r;
     };
-}
 
-periodic = logfn(periodic);
+function randomState() {
+    let s = [];
+    for(let i = 0, len = n * n; i < len; i++) {
+        s[i] = rndColor();
+    }
+    return s;
+}
 
 function neighboursOf(i, j) {
     let neig = [];
@@ -48,48 +46,48 @@ for(let i = 0; i < n; i++) {
     }
 }
 
-function neighbourCount(i,j, state) {
-    let count = 0;
-    for(let k = 0; k < n; k++) {
-        count = count + (isBlack(state[neighbours[i * n + j][k]]) ? 1 : 0);
-    }
+console.log('neig', neighbours);
+
+function neighbourCount(index, state) {
+    let count = neighbours[index]
+        .map(i => state[i]).reduce((i, a) => i + a, 0);
+ //   console.log(`count(${index}) = ${count}`);
     return count;
 }
 
-function createReducer(i,j) {
-    let index = i * n + j,
-        initialState = rndColor();
-    return function reducer(state = initialState, action) {
-        let aindex = action.i * n + action.j;
-        switch(action.type) {
-        case ACTION_MUTATE:
-            let c = neighbourCount(i, j, store.getState());
-            if (c > 4) { return '#fff'; }
-            else if (c === 2 || c === 3) { return '#000'; }
-            else { return state; }
-            break;
-        default:
-            return state;
-        }
-    };
-}
-
-function mutateCell(i,j, color = '#000') {
-    return { type: ACTION_MUTATE, i: i, j: j, color: color };
-}
-
-let reducers = [];
-for (let i = 0; i < n; i++) {
-    for(let j = 0; j < n; j++) {
-        reducers.push(createReducer(i,j));
+function conway([current, counts]) {
+    switch(current) {
+    case 1:
+        if (counts <= 1) return 0;
+        else if (counts === 2 || counts === 3) return 1;
+        else if (counts >= 4) return 0;
+    case 0:
+        if (counts === 3) return 1;
+        else return 0;
     }
 }
+
+const initialState = randomState();
+console.log(initialState);
+
+function reducer(state = initialState, action) {
+    switch(action.type) {
+    case ACTION_MUTATE:
+        let counts = state.map((s, i) => [s, neighbourCount(i, state)]);
+        let newState = counts.map(conway);
+        //let newState = state.map(s => s == 1 ? 0 : 1);
+        return newState;
+    default:
+        return state;
+    }
+}
+
+function mutate() {
+    return { type: ACTION_MUTATE };
+}
+
 const logger = store => next => action => {
     console.group(action.type);
-    if (action.type === ACTION_MUTATE) {
-        console.log(`mutating: (${action.i}, ${action.j} ${action.color})`);
-        console.log('[S]', store.getState());
-    }
     let result = next(action);
     console.groupEnd(action.type);
     return result;
@@ -102,40 +100,25 @@ const wrapComputation = store => next => action => {
     return result;
 };
 
-let reducer = combineReducers(reducers);
-console.info('#reducers: ' + reducers.length);
 let createStoreWithMiddleware = applyMiddleware(wrapComputation /*, logger*/)(createStore);
 let store = createStoreWithMiddleware(reducer);
 
-let rnd = () => Math.floor(Math.random() * n);
+console.log('store created');
 
-window.api = {};
-window.api.mutate = (i, j, color) => store.dispatch(mutateCell(i, j, color));
-window.api.started = false;
 
-function loop(i, j, color) {
-    store.dispatch(mutateCell(i, j, color));
-    if (window.api.started) {
-        setTimeout(function() {
-            loop(rnd(), rnd(), color);
-        }, 0);
-    }
-}
-
-window.api.loop = function() {
-    window.api.started = true;
-    loop(rnd(), rnd(), '#f00');
+let colors = {
+    1: '#000',
+    0: '#fff'
 };
-window.api.stop = function() { window.api.started = false; };
 
 let cell = {
     controller: function(indexes) {
         let { i, j } = indexes;
-        let top = i * u,
-            left = j * u;
-            //color = state[i][j];
         function style() {
-            let color = store.getState()[i * n + j];
+            let top = i * u,
+                left = j * u,
+                state = store.getState()[i * n + j],
+                color = colors[state];
             return `display: inline-block; background-color: ${color}; width: ${u}px; height: ${u}px; top:${top}px; left:${left}px; position: absolute`;
         }
         return {
@@ -176,4 +159,12 @@ let matrix_component = {
 
 m.mount(document.getElementById('theBody'), matrix_component);
 
-api.loop();
+//loop();
+
+function loop() {
+    store.dispatch(mutate());
+    setTimeout(loop, 1000);
+}
+loop();
+
+//store.dispatch(mutate());
