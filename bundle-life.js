@@ -245,7 +245,7 @@
 
 	function loop() {
 	    store.dispatch(mutate());
-	    setTimeout(loop, 1000);
+	    setTimeout(loop, 0);
 	}
 	loop();
 
