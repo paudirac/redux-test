@@ -57,13 +57,14 @@
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	var ACTION_MUTATE = "ACTION_MUTATE";
+	var ACTION_CHANGE_DENSITY = "ACTION_CHANGE_DENSITY";
 
 	var n = 100,
 	    N = n * n,
 	    u = 5;
 
-	var rndColor = function rndColor() {
-	    return Math.random() > 0.9 ? 1 : 0;
+	var rndColor = function rndColor(p) {
+	    return Math.random() > 1 - p ? 1 : 0;
 	},
 	    periodic = function periodic(i) {
 	    switch (i) {
@@ -78,9 +79,11 @@
 	};
 
 	function randomState() {
+	    var p = arguments.length <= 0 || arguments[0] === undefined ? 0.1 : arguments[0];
+
 	    var s = [];
 	    for (var i = 0, len = n * n; i < len; i++) {
-	        s[i] = rndColor();
+	        s[i] = rndColor(p);
 	    }
 	    return s;
 	}
@@ -145,8 +148,9 @@
 	                return [s, neighbourCount(i, state)];
 	            });
 	            var newState = counts.map(conway);
-	            //let newState = state.map(s => s == 1 ? 0 : 1);
 	            return newState;
+	        case ACTION_CHANGE_DENSITY:
+	            return randomState(action.p);
 	        default:
 	            return state;
 	    }
@@ -154,6 +158,10 @@
 
 	function mutate() {
 	    return { type: ACTION_MUTATE };
+	}
+
+	function changeDensity(p) {
+	    return { type: ACTION_CHANGE_DENSITY, p: p };
 	}
 
 	var logger = function logger(store) {
@@ -233,9 +241,15 @@
 	    view: function view(ctrl) {
 	        var row = matrix[0],
 	            row2 = matrix[1];
-	        return (0, _mithril2.default)('div', {
+	        return (0, _mithril2.default)('div', (0, _mithril2.default)('div', (0, _mithril2.default)('label', 'Initial density '), (0, _mithril2.default)('select', {
+	            onchange: function onchange(e) {
+	                return store.dispatch(changeDensity(e.target['value']));
+	            }
+	        }, [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9].map(function (v) {
+	            return (0, _mithril2.default)("option[value=" + v + "]", v);
+	        }))), (0, _mithril2.default)('div', {
 	            style: ctrl.style()
-	        }, matrix); //[row, row2]);
+	        }, matrix));
 	    }
 	};
 
@@ -245,7 +259,7 @@
 
 	function loop() {
 	    store.dispatch(mutate());
-	    setTimeout(loop, 0);
+	    setTimeout(loop, 200);
 	}
 	loop();
 
